@@ -19,6 +19,15 @@ def getType(typeData):
 	}
 	return types[typeData]
 
+def getProtocol(typeData):
+	types = {
+		0x01:"Ethernet",
+		0x12:"IEE 802.11",
+		0x77:"Prism Header",
+		0x7F:"WLAN AVS"
+	}
+	return types[typeData]
+
 while True:
 	data, addr = sock.recvfrom(1024)
 	#print "received message: %r " % data.read(32).hex
@@ -27,7 +36,8 @@ while True:
 	print "header: %r" % "".join(headers)
 	print "version: %r" % ord(headers[0])
 	print "type: %r " % getType(ord(headers[1]))
-	#print 'from client: %r' % data # 
+	protocol = ord(headers[2])*256 + ord(headers[3])
+	print "protocol %r" % getProtocol(protocol) 
 	print 'length: ',len(data)
 	resp = "-"
 
