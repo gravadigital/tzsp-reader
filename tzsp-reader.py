@@ -34,7 +34,7 @@ def getTagType(type):
 		0x01: "TAG_END",
 		0x0A: "TAG_RAW_RSSI",
 		0x0B: "TAG_SNR",
-		0x0C: "TAG_DATA_RATE"
+		0x0C: "TAG_DATA_RATE",
 		0x0D: "TAG_TIMESTAMP",
 		0X0F: "TAG_CONTENTION_FREE",
 		0X10: "TAG_DECRYPTED",
