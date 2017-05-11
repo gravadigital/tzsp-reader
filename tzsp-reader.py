@@ -62,10 +62,8 @@ while True:
 	print "version: %r" % ord(headers[0])
 	print "type: %r " % getType(ord(headers[1]))
 	protocol = ord(headers[2])*256 + ord(headers[3])
-	print "protocol %r" % getProtocol(protocol)
-	print "tag: %r" % tags 
-	processTag(tags)
-	print "length: %r" % len(tags)
+	print "protocol %r" % getProtocol(protocol) 
+	print 'length: ',len(data)
 	resp = "-"
 
 	#print "type:", struct.unpack("!B", data[1])
