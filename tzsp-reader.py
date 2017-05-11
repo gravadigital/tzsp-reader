@@ -63,6 +63,7 @@ while True:
 	print "type: %r " % getType(ord(headers[1]))
 	protocol = ord(headers[2])*256 + ord(headers[3])
 	print "protocol %r" % getProtocol(protocol) 
+	processTag(tags)
 	print 'length: ',len(data)
 	resp = "-"
 
