@@ -1,5 +1,7 @@
 import socket
 import struct
+import binascii
+from struct import *
 
 UDP_IP = "0.0.0.0"
 UDP_PORT = 37008 
@@ -48,7 +50,9 @@ def getTagType(type):
 
 def processTag(tag):
 	tagType = getTagType(ord(tag[0]))
-	tagLength = ord(tag[1])
+	tagLength = 0
+	if(tagType not in ["TAG_END","TAG_PADDING"]):
+		tagLength = ord(tag[1])
 	print "tag type: %r" % tagType
 	print "tag length: %r" % tagLength
 	
@@ -64,11 +68,23 @@ while True:
 	protocol = ord(headers[2])*256 + ord(headers[3])
 	print "protocol %r" % getProtocol(protocol) 
 	processTag(tags)
-	print 'length: ',len(data)
-	resp = "-"
-
-	#print "type:", struct.unpack("!B", data[1])
-	#for dataItem in data:
-        #	resp = resp+"-"+ str(struct.unpack("!B", dataItem)[0]) # (note 2)	
-		
-	#print resp
+	print "data length: %r" % len(tags)
+	packet = tags[1:]
+	hexStr = "".join(tags[21:])
+	iph = unpack('!BBHHHBBH4s4s',packet[14:34])
+	version_ihl = iph[0]
+    	version = version_ihl >> 4
+   	ihl = version_ihl & 0xF
+     
+    	iph_length = ihl * 4
+     
+    	ttl = iph[5]
+    	protocol = iph[6]
+    	s_addr = socket.inet_ntoa(iph[8]);
+    	d_addr = socket.inet_ntoa(iph[9]);
+     	print map(ord,packet)
+    	print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)	
+	#print 'hexStr' + hexStr
+     
+     
+	#break
