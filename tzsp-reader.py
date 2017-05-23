@@ -104,12 +104,19 @@ def getEtherType(etherInt):
 	return types[etherInt]
 
 def processTag(tag):
-	tagType = getTagType(ord(tag[0]))
-	tagLength = 0
-	if(tagType not in ["TAG_END","TAG_PADDING"]):
-		tagLength = ord(tag[1])
-	print "tag type: %r" % tagType
-	print "tag length: %r" % tagLength
+	currentTag = None
+	i = 0
+	while currentTag not in [0x00, 0x01]:
+ 		currentTag = ord(tag[i])
+		tagType = getTagType(ord(tag[0]))
+		tagLength = 0
+		if(tagType not in ["TAG_END","TAG_PADDING"]):
+			tagLength = ord(tag[1])
+		
+		i = i + 1 + tagLength
+		print "tag type: %r" % tagType
+		print "tag length: %r" % tagLength
+	return i
 	
 while True:
 	data, addr = sock.recvfrom(1024)
@@ -117,14 +124,14 @@ while True:
 	headers = data[0:4]
 	tags = data[4:]
 
-	print "header: %r" % "".join(headers)
+	#print "header: %r" % "".join(headers)
 	print "version: %r" % ord(headers[0])
 	print "type: %r " % getType(ord(headers[1]))
 	protocol = ord(headers[2])*256 + ord(headers[3])
 	print "protocol %r" % getProtocol(protocol) 
-	processTag(tags)
-	print "data length: %r" % len(tags)
-	eth_header = tags[1:15]
+	tagsLength = processTag(tags)
+	print "data length: %r" % tagsLength
+	eth_header = tags[tagsLength:15]
 	eth = unpack('!6s6sH' , eth_header)
     	eth_protocol = socket.ntohs(eth[2])
     	print 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol) + ' EtherType: ' + getEtherType(eth[2])
