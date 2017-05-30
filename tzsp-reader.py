@@ -1,9 +1,13 @@
 import socket
+import os
 import sys
 import struct
 import binascii
+import time
+import math
 from struct import *
 
+starttime=time.time()
 UDP_IP = "0.0.0.0"
 UDP_PORT = 37008 
 
@@ -119,43 +123,61 @@ def processTag(tag,details=False):
 			print "tag type: %r" % tagType
 			print "tag length: %r" % tagLength
 	return i
-	
+def processUdpData(data,addr):
+	headers = data[0:4]
+        tags = data[4:]
+
+        #print "header: %r" % "".join(headers)
+        #print "version: %r" % ord(headers[0])
+        #print "type: %r " % getType(ord(headers[1]))
+        protocol = ord(headers[2])*256 + ord(headers[3])
+        protocolStr = getProtocol(protocol)
+
+        tagsLength = processTag(tags)
+        #print "tags length: %r" % tagsLength
+        eth_header = tags[tagsLength:(14+tagsLength)]
+        eth_data = tags[(14+tagsLength):]
+
+        eth = unpack('!6s6sH' , eth_header)
+        eth_protocol = socket.ntohs(eth[2])
+        #print 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Pr$
+
+        packet = tags[15:]
+        hexStr = "".join(tags[21:])
+        iph = unpack('!BBHHHBBH4s4s',packet[:20])
+        version_ihl = iph[0]
+        version = version_ihl >> 4
+        ihl = version_ihl & 0xF
+
+        iph_length = ihl * 4
+
+        ttl = iph[5]
+        protocol = iph[6]
+        s_addr = socket.inet_ntoa(iph[8]);
+        d_addr = socket.inet_ntoa(iph[9]);
+        #print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : '$
+        #print str(s_addr) + ' --> ' + str(d_addr) + ' size: ' + str(len(eth_data)) + ' b'
+        #sys.stdout.write(unicode(packet[20:], errors='ignore'))
+	return {"s_addr":s_addr,"d_addr":d_addr,"len":len(eth_data)}
+
+consumes = {}
+available = True
 while True:
 	data, addr = sock.recvfrom(1024)
-
-	headers = data[0:4]
-	tags = data[4:]
-
-	#print "header: %r" % "".join(headers)
-	#print "version: %r" % ord(headers[0])
-	#print "type: %r " % getType(ord(headers[1]))
-	protocol = ord(headers[2])*256 + ord(headers[3])
-	protocolStr = getProtocol(protocol)
-
-	tagsLength = processTag(tags)
-	#print "tags length: %r" % tagsLength
-	eth_header = tags[tagsLength:(14+tagsLength)]
-	eth_data = tags[(14+tagsLength):]
-
-	eth = unpack('!6s6sH' , eth_header)
-    	eth_protocol = socket.ntohs(eth[2])
-    	#print 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol) + ' EtherType: ' + getEtherType(eth[2])
-	
-	packet = tags[15:]
-	hexStr = "".join(tags[21:])
-	iph = unpack('!BBHHHBBH4s4s',packet[:20])
-	version_ihl = iph[0]
-    	version = version_ihl >> 4
-   	ihl = version_ihl & 0xF
-     
-    	iph_length = ihl * 4
-     
-    	ttl = iph[5]	
-    	protocol = iph[6]
-    	s_addr = socket.inet_ntoa(iph[8]);
-    	d_addr = socket.inet_ntoa(iph[9]);
-    	#print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
-	print str(s_addr) + ' --> ' + str(d_addr) + ' size: ' + str(len(eth_data)) + ' b'	
-	#sys.stdout.write(unicode(packet[20:], errors='ignore'))
-     
+	consumesData = processUdpData(data,addr)
+     	timer = math.floor((time.time() % 2.0))
+	if "192.168.88" in str(consumesData['d_addr']):
+		d_addr = str(consumesData['d_addr'])
+		size = consumesData['len']
+		if d_addr not in consumes:
+			consumes[d_addr] = 0
+		consumes[d_addr] += size
+	if timer == 1:
+		available = True
+	if timer == 0 and available == True:
+		os.system('clear')
+		for ip,size in consumes.iteritems():
+			print "ip: " + ip + " - " + str(round((size/2)/1024)) + "kb/s"
+			consumes[ip] = 0
+		available = False
 	#break
