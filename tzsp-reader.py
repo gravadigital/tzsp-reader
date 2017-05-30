@@ -1,4 +1,5 @@
 import socket
+import sys
 import struct
 import binascii
 from struct import *
@@ -103,7 +104,7 @@ def getEtherType(etherInt):
 	}
 	return types[etherInt]
 
-def processTag(tag):
+def processTag(tag,details=False):
 	currentTag = None
 	i = 0
 	while currentTag not in [0x00, 0x01]:
@@ -114,8 +115,9 @@ def processTag(tag):
 			tagLength = ord(tag[1])
 		
 		i = i + 1 + tagLength
-		print "tag type: %r" % tagType
-		print "tag length: %r" % tagLength
+		if details:
+			print "tag type: %r" % tagType
+			print "tag length: %r" % tagLength
 	return i
 	
 while True:
@@ -125,16 +127,19 @@ while True:
 	tags = data[4:]
 
 	#print "header: %r" % "".join(headers)
-	print "version: %r" % ord(headers[0])
-	print "type: %r " % getType(ord(headers[1]))
+	#print "version: %r" % ord(headers[0])
+	#print "type: %r " % getType(ord(headers[1]))
 	protocol = ord(headers[2])*256 + ord(headers[3])
-	print "protocol %r" % getProtocol(protocol) 
+	protocolStr = getProtocol(protocol)
+
 	tagsLength = processTag(tags)
-	print "data length: %r" % tagsLength
-	eth_header = tags[tagsLength:15]
+	#print "tags length: %r" % tagsLength
+	eth_header = tags[tagsLength:(14+tagsLength)]
+	eth_data = tags[(14+tagsLength):]
+
 	eth = unpack('!6s6sH' , eth_header)
     	eth_protocol = socket.ntohs(eth[2])
-    	print 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol) + ' EtherType: ' + getEtherType(eth[2])
+    	#print 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol) + ' EtherType: ' + getEtherType(eth[2])
 	
 	packet = tags[15:]
 	hexStr = "".join(tags[21:])
@@ -145,13 +150,12 @@ while True:
      
     	iph_length = ihl * 4
      
-    	ttl = iph[5]
+    	ttl = iph[5]	
     	protocol = iph[6]
     	s_addr = socket.inet_ntoa(iph[8]);
     	d_addr = socket.inet_ntoa(iph[9]);
-     	#print map(ord,packet)
-    	print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)	
-	#print 'hexStr' + hexStr
-     
+    	#print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
+	print str(s_addr) + ' --> ' + str(d_addr) + ' size: ' + str(len(eth_data)) + ' b'	
+	#sys.stdout.write(unicode(packet[20:], errors='ignore'))
      
 	#break
