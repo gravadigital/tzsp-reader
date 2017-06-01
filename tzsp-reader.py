@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import socket
 import os
 import sys
@@ -5,6 +6,8 @@ import struct
 import binascii
 import time
 import math
+import curses
+import locale
 from struct import *
 
 starttime=time.time()
@@ -140,7 +143,7 @@ def processUdpData(data,addr):
 
         eth = unpack('!6s6sH' , eth_header)
         eth_protocol = socket.ntohs(eth[2])
-        #print 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Pr$
+        mac_details = 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol)
 
         packet = tags[15:]
         hexStr = "".join(tags[21:])
@@ -155,29 +158,90 @@ def processUdpData(data,addr):
         protocol = iph[6]
         s_addr = socket.inet_ntoa(iph[8]);
         d_addr = socket.inet_ntoa(iph[9]);
-        #print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : '$
-        #print str(s_addr) + ' --> ' + str(d_addr) + ' size: ' + str(len(eth_data)) + ' b'
-        #sys.stdout.write(unicode(packet[20:], errors='ignore'))
-	return {"s_addr":s_addr,"d_addr":d_addr,"len":len(eth_data)}
+        connection_detail = ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
+	return {"s_addr":s_addr,"d_addr":d_addr,"len":len(eth_data),"connection_detail":connection_detail,"mac_details":mac_details}
 
-consumes = {}
-available = True
-while True:
-	data, addr = sock.recvfrom(1024)
-	consumesData = processUdpData(data,addr)
-     	timer = math.floor((time.time() % 2.0))
-	if "192.168.88" in str(consumesData['d_addr']):
-		d_addr = str(consumesData['d_addr'])
-		size = consumesData['len']
-		if d_addr not in consumes:
-			consumes[d_addr] = 0
-		consumes[d_addr] += size
-	if timer == 1:
-		available = True
-	if timer == 0 and available == True:
-		os.system('clear')
-		for ip,size in consumes.iteritems():
-			print "ip: " + ip + " - " + str(round((size/2)/1024)) + "kb/s"
-			consumes[ip] = 0
-		available = False
+
+
+try:
+	consumes = {}
+	encoding="utf-8"
+	history_lines = [] 
+	available = True
+	stdscr = curses.initscr()
+	curses.noecho()
+	curses.cbreak()
+	curses.curs_set(0)
+	stdscr.keypad(1)
+	rows, columns = stdscr.getmaxyx()
+	print stdscr.getmaxyx()
+	stdscr.border()
+	bottom_menu = u"(↓) Next line | (↑) Previous line | (→) Next page | (←) Previous page | (q) Quit".encode(encoding).center(columns - 4)
+	consums = stdscr.subwin((rows -2)/2, columns -2, 1,1)
+	consums.border(1)
+	out = stdscr.subwin((rows - 2)/2, columns - 4, rows/2, 1)
+	out.border(1)
+	out_rows, out_columns = out.getmaxyx()
+	out_rows -= 2
+	lines = history_lines
+	stdscr.refresh()
+	line = 0
+	consum_msg=[]
+	while True:
+		data, addr = sock.recvfrom(1024)
+		consumesData = processUdpData(data,addr)
+		if len(history_lines) > 100000:
+			history_lines = []
+		history_lines.append(consumesData['connection_detail'])
+		lines = map(lambda x: x + " " * (out_columns - len(x)), reduce(lambda x, y: x + y, [[x[i:i+out_columns] for i in xrange(0, len(x), out_columns)] for x in history_lines]))
+     		timer = math.floor((time.time() % 2.0))
+		if "192.168.88" in str(consumesData['d_addr']):
+			d_addr = str(consumesData['d_addr'])
+			size = consumesData['len']
+			if d_addr not in consumes:
+				consumes[d_addr] = 0
+			consumes[d_addr] += size
+		if timer == 1:
+			available = True
+		if timer == 0 and available == True:
+			os.system('clear')
+			consum_msg = []
+			for ip,size in consumes.iteritems():
+				consum_msg.append("ip: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
+				consumes[ip] = 0
+			available = False
+		top_menu = (u"Lines %d to %d of %d of %s" % (line + 1, min(len(lines), line + out_rows), len(lines), "tzsp reader")).encode(encoding).center(columns - 4)
+
+		line = len(history_lines) - out_rows
+		out.addstr(1, 2, "".join(lines[line:]))
+		consumes_out = []
+		if len(consum_msg) > 0:
+			#consumes_out = map(lambda x: x + " " * (out_columns - len(x)), reduce(lambda x, y: x + y, [[x[i:i+out_columns] for i in xrange(0, len(x), out_columns)] for x in consum_msg]))
+ 			#consum_end = len(consum_msg[0])	
+			#consums.addstr(4,4,str(len(consum_msg[0])))
+		#consums.addstr(2,4,"".join(consumes_out[:5]))
+			consums.addstr(2,3,consum_msg[0])
+
+		stdscr.refresh()
+		out.refresh()
+
+		consums.refresh()
+		#c = stdscr.getch()
+		#if c == ord("q"):
+ 		#	break
+		#elif c == curses.KEY_DOWN:
+ 		#	if len(lines) - line > out_rows:
+		#		line += 1
+		#elif c == curses.KEY_UP:
+		#	if line > 0:
+ 		#		line -= 1
+ 		#elif c == curses.KEY_RIGHT:
+  		#	if len(lines) - line >= 2 * out_rows:
+ 		#		line += out_rows
+		#elif c == curses.KEY_LEFT:
+		#         if line >= out_rows:
+		#		line -= out_rows
 	#break
+finally:
+        curses.nocbreak(); stdscr.keypad(0); curses.echo(); curses.curs_set(1)
+        curses.endwin()
