@@ -207,19 +207,19 @@ try:
             available = True
         if timer == 0 and available == True:
             consum_msg = []
-            for ip,size in sorted(consumes.items(), key=itemgetter(1)):
-                consum_msg.append("ip: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
+            for ip,size in sorted(consumes.items(), key=itemgetter(1), reverse=True):
+                consum_msg.append("IP: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
                 consumes[ip] = 0
             available = False
-            j = 2
-            maxrows = (rows/2-4)
-            for msg in consum_msg[-maxrows:]:
+            j = 1
+            maxrows = (rows/2-3)
+            for msg in consum_msg[:maxrows]:
                 consums_panel.addstr(j,5,msg.ljust(columns/2))
                 j+=1
 
 
-        h = 2
-        for log in history_lines[-(rows/2-4):]:
+        h = 1
+        for log in history_lines[-(rows/2-3):]:
             log_panel.addstr(h,2,log.ljust(columns/2))
             h+=1
         consums_panel.refresh(0,0,1,2,rows,columns)
