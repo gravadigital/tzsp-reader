@@ -205,24 +205,22 @@ try:
         if timer == 1:
             available = True
         if timer == 0 and available == True:
-            os.system('clear')
             consum_msg = []
             for ip,size in consumes.iteritems():
                 consum_msg.append("ip: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
                 consumes[ip] = 0
             available = False
             j = 2
-            for msg in consum_msg[-(rows/2-3):]:
-                consums_panel.addstr(j,5,msg.ljust(columns - len(msg) - 5))
+            for msg in consum_msg[-(rows/2-4):]:
+                consums_panel.addstr(j,5,msg.ljust(columns/2))
                 j+=1
 
         h = 2
-        for log in history_lines[-(rows/2-3):]:
-            log_panel.addstr(h,3,log.ljust(columns - len(log) -2))
+        for log in history_lines[-(rows/2-4):]:
+            log_panel.addstr(h,2,log.ljust(columns/2))
             h+=1
-        stdscr.refresh()
-        consums_panel.refresh(0,0,0,0,rows,columns)
-        log_panel.refresh(0,0,(rows/2)-1,0,rows+2,columns)
+        consums_panel.refresh(0,0,1,2,rows,columns)
+        log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
 
 finally:
     curses.nocbreak();stdscr.keypad(0);curses.echo();
