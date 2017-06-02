@@ -171,19 +171,20 @@ try:
     stdscr = curses.initscr()
 
     curses.nocbreak(); stdscr.keypad(1); curses.echo();
-    stdscr.border()
+    curses.curs_set(0)
+    stdscr.border(0)
     rows, columns = stdscr.getmaxyx()
-
+    columns -= 2
     consums_panel = curses.newpad((rows -2)/2, columns -2)
-    consums_panel.border(1)
+    consums_panel.border(0)
 
     log_panel = curses.newpad((rows - 2)/2, columns - 2)
-    log_panel.border(1)
+    log_panel.border(0)
     log_panel_rows, log_panel_columns = log_panel.getmaxyx()
     log_panel_rows -= 2
     stdscr.refresh()
-    consums_panel.refresh(0,0,0,0,rows,columns)
-    log_panel.refresh(0,0,(rows/2)+1,0,rows+2,columns)
+    consums_panel.refresh(0,0,1,2,rows,columns)
+    log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
 
     line = 0
     consum_msg=[]
@@ -220,7 +221,7 @@ try:
             h+=1
         stdscr.refresh()
         consums_panel.refresh(0,0,0,0,rows,columns)
-        log_panel.refresh(0,0,(rows/2)+1,0,rows+2,columns)
+        log_panel.refresh(0,0,(rows/2)-1,0,rows+2,columns)
 
 finally:
     curses.nocbreak();stdscr.keypad(0);curses.echo();
