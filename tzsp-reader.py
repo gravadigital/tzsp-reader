@@ -173,6 +173,7 @@ try:
     curses.nocbreak(); stdscr.keypad(1); curses.echo();
     curses.curs_set(0)
     stdscr.border(0)
+
     rows, columns = stdscr.getmaxyx()
     columns -= 2
     consums_panel = curses.newpad((rows -2)/2, columns -2)
@@ -210,14 +211,14 @@ try:
                 consum_msg.append("ip: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
                 consumes[ip] = 0
             available = False
-            j = 1
-            for msg in consum_msg[-(rows/2-1):]:
-                consums_panel.addstr(j,1,msg.ljust(columns - len(msg)))
+            j = 2
+            for msg in consum_msg[-(rows/2-3):]:
+                consums_panel.addstr(j,5,msg.ljust(columns - len(msg) - 5))
                 j+=1
 
-        h = 1
-        for log in history_lines[-(rows/2-1):]:
-            consums_panel.addstr(h,1,log.ljust(columns - len(log)))
+        h = 2
+        for log in history_lines[-(rows/2-3):]:
+            log_panel.addstr(h,3,log.ljust(columns - len(log) -2))
             h+=1
         stdscr.refresh()
         consums_panel.refresh(0,0,0,0,rows,columns)
