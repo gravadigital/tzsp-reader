@@ -9,6 +9,7 @@ import math
 import curses
 import locale
 from struct import *
+from operator import itemgetter
 
 starttime=time.time()
 UDP_IP = "0.0.0.0"
@@ -206,14 +207,16 @@ try:
             available = True
         if timer == 0 and available == True:
             consum_msg = []
-            for ip,size in consumes.iteritems():
+            for ip,size in sorted(consumes.items(), key=itemgetter(1)):
                 consum_msg.append("ip: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
                 consumes[ip] = 0
             available = False
             j = 2
-            for msg in consum_msg[-(rows/2-4):]:
+            maxrows = (rows/2-4)
+            for msg in consum_msg[-maxrows:]:
                 consums_panel.addstr(j,5,msg.ljust(columns/2))
                 j+=1
+
 
         h = 2
         for log in history_lines[-(rows/2-4):]:
