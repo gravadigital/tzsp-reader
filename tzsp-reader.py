@@ -12,7 +12,7 @@ from struct import *
 
 starttime=time.time()
 UDP_IP = "0.0.0.0"
-UDP_PORT = 37008 
+UDP_PORT = 37008
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -120,7 +120,7 @@ def processTag(tag,details=False):
 		tagLength = 0
 		if(tagType not in ["TAG_END","TAG_PADDING"]):
 			tagLength = ord(tag[1])
-		
+
 		i = i + 1 + tagLength
 		if details:
 			print "tag type: %r" % tagType
@@ -164,84 +164,64 @@ def processUdpData(data,addr):
 
 
 try:
-	consumes = {}
-	encoding="utf-8"
-	history_lines = [] 
-	available = True
-	stdscr = curses.initscr()
-	curses.noecho()
-	curses.cbreak()
-	curses.curs_set(0)
-	stdscr.keypad(1)
-	rows, columns = stdscr.getmaxyx()
-	print stdscr.getmaxyx()
-	stdscr.border()
-	bottom_menu = u"(↓) Next line | (↑) Previous line | (→) Next page | (←) Previous page | (q) Quit".encode(encoding).center(columns - 4)
-	consums = stdscr.subwin((rows -2)/2, columns -2, 1,1)
-	consums.border(1)
-	out = stdscr.subwin((rows - 2)/2, columns - 4, rows/2, 1)
-	out.border(1)
-	out_rows, out_columns = out.getmaxyx()
-	out_rows -= 2
-	lines = history_lines
-	stdscr.refresh()
-	line = 0
-	consum_msg=[]
-	while True:
-		data, addr = sock.recvfrom(1024)
-		consumesData = processUdpData(data,addr)
-		if len(history_lines) > 100000:
-			history_lines = []
-		history_lines.append(consumesData['connection_detail'])
-		lines = map(lambda x: x + " " * (out_columns - len(x)), reduce(lambda x, y: x + y, [[x[i:i+out_columns] for i in xrange(0, len(x), out_columns)] for x in history_lines]))
-     		timer = math.floor((time.time() % 2.0))
-		if "192.168.88" in str(consumesData['d_addr']):
-			d_addr = str(consumesData['d_addr'])
-			size = consumesData['len']
-			if d_addr not in consumes:
-				consumes[d_addr] = 0
-			consumes[d_addr] += size
-		if timer == 1:
-			available = True
-		if timer == 0 and available == True:
-			os.system('clear')
-			consum_msg = []
-			for ip,size in consumes.iteritems():
-				consum_msg.append("ip: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
-				consumes[ip] = 0
-			available = False
-		top_menu = (u"Lines %d to %d of %d of %s" % (line + 1, min(len(lines), line + out_rows), len(lines), "tzsp reader")).encode(encoding).center(columns - 4)
+    consumes = {}
+    encoding="utf-8"
+    history_lines = []
+    available = True
+    stdscr = curses.initscr()
 
-		line = len(history_lines) - out_rows
-		out.addstr(1, 2, "".join(lines[line:]))
-		consumes_out = []
-		if len(consum_msg) > 0:
-			#consumes_out = map(lambda x: x + " " * (out_columns - len(x)), reduce(lambda x, y: x + y, [[x[i:i+out_columns] for i in xrange(0, len(x), out_columns)] for x in consum_msg]))
- 			#consum_end = len(consum_msg[0])	
-			#consums.addstr(4,4,str(len(consum_msg[0])))
-		#consums.addstr(2,4,"".join(consumes_out[:5]))
-			consums.addstr(2,3,consum_msg[0])
+    curses.nocbreak(); stdscr.keypad(1); curses.echo();
+    stdscr.border()
+    rows, columns = stdscr.getmaxyx()
 
-		stdscr.refresh()
-		out.refresh()
+    consums_panel = curses.newpad((rows -2)/2, columns -2)
+    consums_panel.border(1)
 
-		consums.refresh()
-		#c = stdscr.getch()
-		#if c == ord("q"):
- 		#	break
-		#elif c == curses.KEY_DOWN:
- 		#	if len(lines) - line > out_rows:
-		#		line += 1
-		#elif c == curses.KEY_UP:
-		#	if line > 0:
- 		#		line -= 1
- 		#elif c == curses.KEY_RIGHT:
-  		#	if len(lines) - line >= 2 * out_rows:
- 		#		line += out_rows
-		#elif c == curses.KEY_LEFT:
-		#         if line >= out_rows:
-		#		line -= out_rows
-	#break
+    log_panel = curses.newpad((rows - 2)/2, columns - 2)
+    log_panel.border(1)
+    log_panel_rows, log_panel_columns = log_panel.getmaxyx()
+    log_panel_rows -= 2
+    stdscr.refresh()
+    consums_panel.refresh(0,0,0,0,rows,columns)
+    log_panel.refresh(0,0,(rows/2)+1,0,rows+2,columns)
+
+    line = 0
+    consum_msg=[]
+    while True:
+        data, addr = sock.recvfrom(1024)
+        consumesData = processUdpData(data,addr)
+        if len(history_lines) > 100000:
+            history_lines = history_lines[-1000:]
+        history_lines.append(consumesData['connection_detail'])
+        timer = math.floor((time.time() % 2.0))
+        if "192.168.88" in str(consumesData['d_addr']):
+            d_addr = str(consumesData['d_addr'])
+            size = consumesData['len']
+            if d_addr not in consumes:
+                consumes[d_addr] = 0
+            consumes[d_addr] += size
+        if timer == 1:
+            available = True
+        if timer == 0 and available == True:
+            os.system('clear')
+            consum_msg = []
+            for ip,size in consumes.iteritems():
+                consum_msg.append("ip: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
+                consumes[ip] = 0
+            available = False
+            j = 1
+            for msg in consum_msg[-(rows/2-1):]:
+                consums_panel.addstr(j,1,msg.ljust(columns - len(msg)))
+                j+=1
+
+        h = 1
+        for log in history_lines[-(rows/2-1):]:
+            consums_panel.addstr(h,1,log.ljust(columns - len(log)))
+            h+=1
+        stdscr.refresh()
+        consums_panel.refresh(0,0,0,0,rows,columns)
+        log_panel.refresh(0,0,(rows/2)+1,0,rows+2,columns)
+
 finally:
-        curses.nocbreak(); stdscr.keypad(0); curses.echo(); curses.curs_set(1)
-        curses.endwin()
+    curses.nocbreak();stdscr.keypad(0);curses.echo();
+    curses.endwin()
