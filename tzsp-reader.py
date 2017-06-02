@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import socket
 import os
 import sys
@@ -5,11 +6,14 @@ import struct
 import binascii
 import time
 import math
+import curses
+import locale
 from struct import *
+from operator import itemgetter
 
 starttime=time.time()
 UDP_IP = "0.0.0.0"
-UDP_PORT = 37008 
+UDP_PORT = 37008
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -117,7 +121,7 @@ def processTag(tag,details=False):
 		tagLength = 0
 		if(tagType not in ["TAG_END","TAG_PADDING"]):
 			tagLength = ord(tag[1])
-		
+
 		i = i + 1 + tagLength
 		if details:
 			print "tag type: %r" % tagType
@@ -140,7 +144,7 @@ def processUdpData(data,addr):
 
         eth = unpack('!6s6sH' , eth_header)
         eth_protocol = socket.ntohs(eth[2])
-        #print 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Pr$
+        mac_details = 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol)
 
         packet = tags[15:]
         hexStr = "".join(tags[21:])
@@ -155,29 +159,72 @@ def processUdpData(data,addr):
         protocol = iph[6]
         s_addr = socket.inet_ntoa(iph[8]);
         d_addr = socket.inet_ntoa(iph[9]);
-        #print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : '$
-        #print str(s_addr) + ' --> ' + str(d_addr) + ' size: ' + str(len(eth_data)) + ' b'
-        #sys.stdout.write(unicode(packet[20:], errors='ignore'))
-	return {"s_addr":s_addr,"d_addr":d_addr,"len":len(eth_data)}
+        connection_detail = ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
+	return {"s_addr":s_addr,"d_addr":d_addr,"len":len(eth_data),"connection_detail":connection_detail,"mac_details":mac_details}
 
-consumes = {}
-available = True
-while True:
-	data, addr = sock.recvfrom(1024)
-	consumesData = processUdpData(data,addr)
-     	timer = math.floor((time.time() % 2.0))
-	if "192.168.88" in str(consumesData['d_addr']):
-		d_addr = str(consumesData['d_addr'])
-		size = consumesData['len']
-		if d_addr not in consumes:
-			consumes[d_addr] = 0
-		consumes[d_addr] += size
-	if timer == 1:
-		available = True
-	if timer == 0 and available == True:
-		os.system('clear')
-		for ip,size in consumes.iteritems():
-			print "ip: " + ip + " - " + str(round((size/2)/1024)) + "kb/s"
-			consumes[ip] = 0
-		available = False
-	#break
+
+
+try:
+    consumes = {}
+    encoding="utf-8"
+    history_lines = []
+    available = True
+    stdscr = curses.initscr()
+
+    curses.nocbreak(); stdscr.keypad(1); curses.echo();
+    curses.curs_set(0)
+    stdscr.border(0)
+
+    rows, columns = stdscr.getmaxyx()
+    columns -= 2
+    consums_panel = curses.newpad((rows -2)/2, columns -2)
+    consums_panel.border(0)
+
+    log_panel = curses.newpad((rows - 2)/2, columns - 2)
+    log_panel.border(0)
+    log_panel_rows, log_panel_columns = log_panel.getmaxyx()
+    log_panel_rows -= 2
+    stdscr.refresh()
+    consums_panel.refresh(0,0,1,2,rows,columns)
+    log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
+
+    line = 0
+    consum_msg=[]
+    while True:
+        data, addr = sock.recvfrom(1024)
+        consumesData = processUdpData(data,addr)
+        if len(history_lines) > 100000:
+            history_lines = history_lines[-1000:]
+        history_lines.append(consumesData['connection_detail'])
+        timer = math.floor((time.time() % 2.0))
+        if "192.168.88" in str(consumesData['d_addr']):
+            d_addr = str(consumesData['d_addr'])
+            size = consumesData['len']
+            if d_addr not in consumes:
+                consumes[d_addr] = 0
+            consumes[d_addr] += size
+        if timer == 1:
+            available = True
+        if timer == 0 and available == True:
+            consum_msg = []
+            for ip,size in sorted(consumes.items(), key=itemgetter(1), reverse=True):
+                consum_msg.append("IP: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
+                consumes[ip] = 0
+            available = False
+            j = 1
+            maxrows = (rows/2-3)
+            for msg in consum_msg[:maxrows]:
+                consums_panel.addstr(j,5,msg.ljust(columns/2))
+                j+=1
+
+
+        h = 1
+        for log in history_lines[-(rows/2-3):]:
+            log_panel.addstr(h,2,log.ljust(columns/2))
+            h+=1
+        consums_panel.refresh(0,0,1,2,rows,columns)
+        log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
+
+finally:
+    curses.nocbreak();stdscr.keypad(0);curses.echo();
+    curses.endwin()
