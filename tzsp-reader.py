@@ -4,6 +4,7 @@ import os
 import sys
 import struct
 import binascii
+import json
 import time
 import math
 import curses
@@ -127,6 +128,7 @@ def processTag(tag,details=False):
 			print "tag type: %r" % tagType
 			print "tag length: %r" % tagLength
 	return i
+
 def processUdpData(data,addr):
 	headers = data[0:4]
         tags = data[4:]
@@ -161,16 +163,20 @@ def processUdpData(data,addr):
         d_addr = socket.inet_ntoa(iph[9]);
         connection_detail = ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
 	return {"s_addr":s_addr,"d_addr":d_addr,"len":len(eth_data),"connection_detail":connection_detail,"mac_details":mac_details}
-
-
-
+def readIpFile(fileName='./ipfile.json'):
+    if(os.path.isfile(fileName)):
+        with open(fileName,'r') as configFile:
+            ipNames = json.load(configFile)
+        return ipNames
+    else:
+        return False
 try:
     consumes = {}
     encoding="utf-8"
     history_lines = []
     available = True
     stdscr = curses.initscr()
-
+    ipNames = readIpFile()
     curses.nocbreak(); stdscr.keypad(1); curses.echo();
     curses.curs_set(0)
     stdscr.border(0)
@@ -197,7 +203,7 @@ try:
             history_lines = history_lines[-1000:]
         history_lines.append(consumesData['connection_detail'])
         timer = math.floor((time.time() % 2.0))
-        if "192.168.88" in str(consumesData['d_addr']):
+        if "192.168." in str(consumesData['d_addr']):
             d_addr = str(consumesData['d_addr'])
             size = consumesData['len']
             if d_addr not in consumes:
@@ -208,7 +214,10 @@ try:
         if timer == 0 and available == True:
             consum_msg = []
             for ip,size in sorted(consumes.items(), key=itemgetter(1), reverse=True):
-                consum_msg.append("IP: " + ip+ " - " + str(round((size/2)/1024)).strip() + " kb/s.")
+                ipLabel = ip
+                if(ip in ipNames):
+                        ipLabel = ipNames[ip]
+                consum_msg.append("IP: " + ipLabel + " - " + str(round((size/2)/1024)).strip() + " kb/s.")
                 consumes[ip] = 0
             available = False
             j = 1

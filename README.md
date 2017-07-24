@@ -17,9 +17,13 @@ before start you have to [configure sniffer](https://wiki.mikrotik.com/wiki/Manu
 ### Screenshot
 ![screenshot](https://raw.githubusercontent.com/ideasdelivery/tzsp-reader/master/example/tzsp-reader.png)
 
+## ChangeLog
+### beta realease 0.0.3
+* ipfile.json added to display labels for ips
+* fix local ip filter
 
 ### beta release 0.0.2
-In this version you can monitor the traffic and view logs in real time of the requests
+* In this version you can monitor the traffic and view logs in real time of the requests
 
 ### Planned improvements for realease:
 * Better traffic monitoring
