@@ -201,7 +201,7 @@ try:
         consumesData = processUdpData(data,addr)
         if len(history_lines) > 100000:
             history_lines = history_lines[-1000:]
-        history_lines.append(consumesData['connection_detail'])
+        history_lines.append(consumesData['connection_detail'].ljust(columns-5))
         timer = math.floor((time.time() % 2.0))
         if "192.168." in str(consumesData['d_addr']):
             d_addr = str(consumesData['d_addr'])
@@ -217,13 +217,13 @@ try:
                 ipLabel = ip
                 if(ip in ipNames):
                         ipLabel = ipNames[ip]
-                consum_msg.append("IP: " + ipLabel + " - " + str(round((size/2)/1024)).strip() + " kb/s.")
+                consum_msg.append(str("IP: " + ip+ " - " + str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)))
                 consumes[ip] = 0
             available = False
             j = 1
             maxrows = (rows/2-3)
             for msg in consum_msg[:maxrows]:
-                consums_panel.addstr(j,5,msg.ljust(columns/2))
+                consums_panel.addstr(j,5,msg + "     ")
                 j+=1
 
 
