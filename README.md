@@ -18,6 +18,8 @@ before start you have to [configure sniffer](https://wiki.mikrotik.com/wiki/Manu
 ![screenshot](https://raw.githubusercontent.com/ideasdelivery/tzsp-reader/master/example/tzsp-reader.png)
 
 ## ChangeLog
+### beta realease 0.0.4
+* Corrections in consumption measurement
 ### beta realease 0.0.3
 * ipfile.json added to display labels for ips
 * fix local ip filter
