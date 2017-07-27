@@ -217,7 +217,7 @@ try:
                 ipLabel = ip
                 if(ip in ipNames):
                         ipLabel = ipNames[ip]
-                consum_msg.append(str("IP: " + ipLabel + " - " + str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)))
+                consum_msg.append(str("IP: " + ipLabel + " - " + str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust(columns-5))
                 consumes[ip] = 0
             available = False
             j = 1
