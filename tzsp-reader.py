@@ -200,7 +200,7 @@ try:
     log_panel_rows -= 2
     stdscr.refresh()
     consums_panel.refresh(0,0,1,2,rows,columns)
-    consums_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
+    average_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
     log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
 
     line = 0
@@ -216,16 +216,17 @@ try:
         if "192.168." in str(consumesData['d_addr']):
             d_addr = str(consumesData['d_addr'])
             size = consumesData['len']
-            kbps_size = str(round((size/4)/1024)*10)
+            kbps_size = round((size/4)/1024)*10
             if d_addr not in consumes:
                 consumes[d_addr] = 0
-            else:
+            
+            if size > 0:
                 if not d_addr in average_count:
                     average_count[d_addr] = 0
                 average_count[d_addr] += 1
                 if not d_addr in average_consumes:
                     average_consumes[d_addr] = 0
-                average_consumes[d_addr] = Average(average_consumes[d_addr], kbps_size, average_count[d_addr])
+                average_consumes[d_addr] = size#Average(average_consumes[d_addr], kbps_size, average_count[d_addr])
 
             consumes[d_addr] += size
         if timer == 1:
@@ -240,27 +241,28 @@ try:
 		if size != 0:
                 	consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-15))
                 consumes[ip] = 0
-            for ip, average in sorted(consumes.items(), key = itemgetter(1), reverse = True):
+            for ip, average in sorted(average_consumes.items(), key = itemgetter(1), reverse = True):
                 ipLabel = ip
                 if(ip in ipNames):
                     ipLabel = ipNames[ip]
-                average_msg.append(str("IP: " + ipLabel + " - " + str(average).strip() + " kb/s - ").ljust((columns/2)-15))
+                average_msg.append(str("average: " + ipLabel + " - " + str(average).strip() + " kb/s").ljust((columns/2)-15))
             available = False
             j = 1
             maxrows = (rows/2-3)
             for msg in consum_msg[:maxrows]:
                 consums_panel.addstr(j,2,msg)
                 j+=1
+            m=1
             for msg in average_msg[:maxrows]:
-                average_panel.addstr(j,2,msg)
+                average_panel.addstr(m,2,msg)
+                m+=1
 
         h = 1
         for log in history_lines[-(rows/2-3):]:
             log_panel.addstr(h,2,log.ljust(columns/2))
             h+=1
-            h+=1
         consums_panel.refresh(0,0,1,2,rows,columns)
-        average_panel.refresh(0,0,1,2,rows,columns)
+        average_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
         log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
 
 finally:
