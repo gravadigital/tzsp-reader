@@ -216,18 +216,8 @@ try:
         if "192.168." in str(consumesData['d_addr']):
             d_addr = str(consumesData['d_addr'])
             size = consumesData['len']
-            kbps_size = round((size/4)/1024)*10
             if d_addr not in consumes:
                 consumes[d_addr] = 0
-            
-            if size > 0:
-                if not d_addr in average_count:
-                    average_count[d_addr] = 0
-                average_count[d_addr] += 1
-                if not d_addr in average_consumes:
-                    average_consumes[d_addr] = 0
-                average_consumes[d_addr] = size#Average(average_consumes[d_addr], kbps_size, average_count[d_addr])
-
             consumes[d_addr] += size
         if timer == 1:
            available = True
@@ -235,11 +225,18 @@ try:
             consum_msg = []
             average_msg = []
             for ip,size in sorted(consumes.items(), key=itemgetter(1), reverse=True):
+                kbps_size = round((size/4)/1024)*10
                 ipLabel = ip
                 if(ip in ipNames):
                         ipLabel = ipNames[ip]
-		if size != 0:
-                	consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-15))
+                if size != 0:
+                    consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-15))
+                    if not ip in average_count:
+                        average_count[ip] = 0
+                        average_count[ip] += 1
+                        if not ip in average_consumes:
+                            average_consumes[ip] = 0
+                            average_consumes[ip] = Average(average_consumes[ip], kbps_size, average_count[ip])
                 consumes[ip] = 0
             for ip, average in sorted(average_consumes.items(), key = itemgetter(1), reverse = True):
                 ipLabel = ip
