@@ -170,8 +170,14 @@ def readIpFile(fileName='./ipfile.json'):
         return ipNames
     else:
         return False
+
+def Average(previusAverage = 0, value = 0, quantity = 1):
+	return previusAverage * ( (quantity-1) / quantity ) + value / quantity
+
 try:
     consumes = {}
+    average_consumes = {}
+    average_count = {}
     encoding="utf-8"
     history_lines = []
     available = True
@@ -199,6 +205,7 @@ try:
 
     line = 0
     consum_msg=[]
+    average_msg=[]
     while True:
         data, addr = sock.recvfrom(1024)
         consumesData = processUdpData(data,addr)
@@ -209,24 +216,39 @@ try:
         if "192.168." in str(consumesData['d_addr']):
             d_addr = str(consumesData['d_addr'])
             size = consumesData['len']
+	    kbps_size = str(round((size/4)/1024)*10)
             if d_addr not in consumes:
                 consumes[d_addr] = 0
+	    else:
+		if not d_addr in average_count:
+			average_count[d_addr] = 0
+		average_count[d_addr] += 1
+		
+		average_consumes[d_addr] = Average(average_consumes[d_addr], kbps_size, average_count[d_addr]) 
             consumes[d_addr] += size
         if timer == 1:
-            available = True
+           available = True
         if timer == 0 and available == True:
             consum_msg = []
+            average_msg = []
             for ip,size in sorted(consumes.items(), key=itemgetter(1), reverse=True):
                 ipLabel = ip
                 if(ip in ipNames):
                         ipLabel = ipNames[ip]
-                consum_msg.append(str("IP: " + ipLabel + " - " + str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust(columns-15))
+		if size != 0:
+                	consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-15))
                 consumes[ip] = 0
+            for ip, average in sorted(consumes.items(), key = itemgetter(1), reverse = True):
+                ipLabel = ip
+                if(ip in ipNames):
+                        ipLabel = ipNames[ip]
+                average_msg.append(str("IP: " + ipLabel + " - " + str(average).strip() + " kb/s - ")
             available = False
             j = 1
             maxrows = (rows/2-3)
             for msg in consum_msg[:maxrows]:
-                consums_panel.addstr(j,5,msg + "     ")
+		average_panel.addstr(j,2,)
+                consums_panel.addstr(j,2,msg)
                 j+=1
 
 
