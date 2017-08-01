@@ -172,7 +172,7 @@ def readIpFile(fileName='./ipfile.json'):
         return False
 
 def Average(previusAverage = 0, value = 0, quantity = 1):
-	return float(previusAverage) * ( (int(quantity)-1) / int(quantity) ) + float(value) / int(quantity)
+	return (float(previusAverage) * (int(quantity)-1) / int(quantity) ) + float(value) / int(quantity)
 
 try:
     consumes = {}
@@ -223,7 +223,7 @@ try:
            available = True
         if timer == 0 and available == True:
             consum_msg = []
-            average_msg = []
+            average_msg = ["Promedio:"]
             for ip,size in sorted(consumes.items(), key=itemgetter(1), reverse=True):
                 kbps_size = round((size/4)/1024)*10
                 ipLabel = ip
@@ -231,18 +231,20 @@ try:
                         ipLabel = ipNames[ip]
                 if size != 0:
                     consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-15))
-                    if not ip in average_count:
+                    if ip not in average_count:
                         average_count[ip] = 0
+                    if ip not in average_consumes:
+                        average_consumes[ip] = 0
+                    if kbps_size > 0:
                         average_count[ip] += 1
-                        if not ip in average_consumes:
-                            average_consumes[ip] = 0
-                            average_consumes[ip] = Average(average_consumes[ip], kbps_size, average_count[ip])
+                        average_consumes[ip] = Average(average_consumes[ip], kbps_size, average_count[ip])
                 consumes[ip] = 0
             for ip, average in sorted(average_consumes.items(), key = itemgetter(1), reverse = True):
                 ipLabel = ip
                 if(ip in ipNames):
                     ipLabel = ipNames[ip]
-                average_msg.append(str("average: " + ipLabel + " - " + str(average).strip() + " kb/s").ljust((columns/2)-15))
+                if average > 0:
+                    average_msg.append(str(ipLabel + " - " + str(round(average)).strip() + " kb/s").ljust((columns/2)-15))
             available = False
             j = 1
             maxrows = (rows/2-3)
