@@ -172,7 +172,7 @@ def readIpFile(fileName='./ipfile.json'):
         return False
 
 def Average(previusAverage = 0, value = 0, quantity = 1):
-	return previusAverage * ( (quantity-1) / quantity ) + value / quantity
+	return float(previusAverage) * ( (int(quantity)-1) / int(quantity) ) + float(value) / int(quantity)
 
 try:
     consumes = {}
@@ -226,8 +226,8 @@ try:
                 if not d_addr in average_consumes:
                     average_consumes[d_addr] = 0
                 average_consumes[d_addr] = Average(average_consumes[d_addr], kbps_size, average_count[d_addr])
-                
-        consumes[d_addr] += size
+
+            consumes[d_addr] += size
         if timer == 1:
            available = True
         if timer == 0 and available == True:
@@ -258,7 +258,9 @@ try:
         for log in history_lines[-(rows/2-3):]:
             log_panel.addstr(h,2,log.ljust(columns/2))
             h+=1
+            h+=1
         consums_panel.refresh(0,0,1,2,rows,columns)
+        average_panel.refresh(0,0,1,2,rows,columns)
         log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
 
 finally:
