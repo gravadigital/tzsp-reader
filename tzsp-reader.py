@@ -223,8 +223,8 @@ try:
 		if not d_addr in average_count:
 			average_count[d_addr] = 0
 		average_count[d_addr] += 1
-		
-		average_consumes[d_addr] = Average(average_consumes[d_addr], kbps_size, average_count[d_addr]) 
+
+		average_consumes[d_addr] = Average(average_consumes[d_addr], kbps_size, average_count[d_addr])
             consumes[d_addr] += size
         if timer == 1:
            available = True
@@ -241,16 +241,16 @@ try:
             for ip, average in sorted(consumes.items(), key = itemgetter(1), reverse = True):
                 ipLabel = ip
                 if(ip in ipNames):
-                        ipLabel = ipNames[ip]
-                average_msg.append(str("IP: " + ipLabel + " - " + str(average).strip() + " kb/s - ")
+                    ipLabel = ipNames[ip]
+                average_msg.append(str("IP: " + ipLabel + " - " + str(average).strip() + " kb/s - ").ljust((columns/2)-15))
             available = False
             j = 1
             maxrows = (rows/2-3)
             for msg in consum_msg[:maxrows]:
-		average_panel.addstr(j,2,)
                 consums_panel.addstr(j,2,msg)
                 j+=1
-
+            for msg in average_msg[:maxrows]:
+                average_panel.addstr(j,2,msg)
 
         h = 1
         for log in history_lines[-(rows/2-3):]:
