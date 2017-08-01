@@ -183,8 +183,10 @@ try:
 
     rows, columns = stdscr.getmaxyx()
     columns -= 2
-    consums_panel = curses.newpad((rows -2)/2, columns -2)
+    consums_panel = curses.newpad((rows -2)/2, (columns -2)/2)
     consums_panel.border(0)
+    average_panel = curses.newpad((rows -2)/2, (columns -2)/2)
+    average_panel.border(0)
 
     log_panel = curses.newpad((rows - 2)/2, columns - 2)
     log_panel.border(0)
@@ -192,6 +194,7 @@ try:
     log_panel_rows -= 2
     stdscr.refresh()
     consums_panel.refresh(0,0,1,2,rows,columns)
+    consums_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
     log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
 
     line = 0
