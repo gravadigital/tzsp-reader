@@ -219,16 +219,14 @@ try:
             kbps_size = str(round((size/4)/1024)*10)
             if d_addr not in consumes:
                 consumes[d_addr] = 0
-        else:
-            if not d_addr in average_count:
-                average_count[d_addr] = 0
-
-            average_count[d_addr] += 1
-
-            if not d_addr in average_consumes:
-                average_consumes[d_addr] = 0
-
-            average_consumes[d_addr] = Average(average_consumes[d_addr], kbps_size, average_count[d_addr])
+            else:
+                if not d_addr in average_count:
+                    average_count[d_addr] = 0
+                average_count[d_addr] += 1
+                if not d_addr in average_consumes:
+                    average_consumes[d_addr] = 0
+                average_consumes[d_addr] = Average(average_consumes[d_addr], kbps_size, average_count[d_addr])
+                
         consumes[d_addr] += size
         if timer == 1:
            available = True
