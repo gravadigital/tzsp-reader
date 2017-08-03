@@ -15,7 +15,10 @@ python tzsp-reader.py
 
 before start you have to [configure sniffer](https://wiki.mikrotik.com/wiki/Manual:Tools/Packet_Sniffer) in the mikrotik.
 ### Screenshot
-![screenshot](https://raw.githubusercontent.com/ideasdelivery/tzsp-reader/master/example/tzsp-reader.png)
+![screenshot](https://raw.githubusercontent.com/gravadigital/tzsp-reader/master/example/statustics.jpg)
+
+### History ( -h option)
+![screenshot](https://raw.githubusercontent.com/gravadigital/tzsp-reader/master/example/tzsp-reader.png)
 
 ## ChangeLog
 ### beta realease 0.0.4
