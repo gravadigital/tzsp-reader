@@ -335,8 +335,8 @@ try:
                 ipLabel = ip
                 if(ip in ipNames):
                         ipLabel = ipNames[ip]
-                if size != 0:
-                    consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-15))
+                if kbps_size != 0:
+                    consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-7))
                     if ip not in average_count:
                         average_count[ip] = 0
                     if ip not in average_consumes:
@@ -350,7 +350,7 @@ try:
                 if(ip in ipNames):
                     ipLabel = ipNames[ip]
                 if average > 0:
-                    average_msg.append(str(ipLabel + " - " + str(round(average)).strip() + " kb/s").ljust((columns/2)-15))
+                    average_msg.append(str(ipLabel + " - " + str(round(average)).strip() + " kb/s").ljust((columns/2)-7))
             available = False
             j = 1
             for msg in consum_msg[:maxrows]:
