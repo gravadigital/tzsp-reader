@@ -227,7 +227,7 @@ def processUdpData(data,addr):
         tags = data[4:]
         tagType = getType(ord(headers[1]))
 
-        protocol = ord(headers[2])*256 + ord(headers[3])
+        protocol = ord(headers[2]) * 256 + ord(headers[3])
         protocolStr = getProtocol(protocol)
 
         tagsLength = processTag(tags)
@@ -269,6 +269,7 @@ try:
     consumes = {}
     average_consumes = {}
     average_count = {}
+    internal_conections = {}
     statistics = {"protocols":{},"packages_count":{}}
     encoding="utf-8"
     historyEnabled = False
@@ -292,18 +293,22 @@ try:
     average_panel = curses.newpad((rows -2)/2, (columns -2)/2)
     average_panel.border(0)
 
-    log_panel = curses.newpad((rows - 2)/2, columns - 2)
+    log_panel = curses.newpad((rows - 2)/2, (columns - 2)/2)
     log_panel.border(0)
+    danger_logs = curses.newpad((rows -2)/2, (columns -2)/2)
+    danger_logs.border(0)
     log_panel_rows, log_panel_columns = log_panel.getmaxyx()
     log_panel_rows -= 2
     stdscr.refresh()
     consums_panel.refresh(0,0,1,2,rows,columns)
     average_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
     log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
+    danger_logs.refresh(0,0,(rows/2),(columns/2) + 2 ,rows+2,columns)
 
     line = 0
     consum_msg=[]
     average_msg=[]
+    internal_conections_msg=[]
     while True:
         data, addr = sock.recvfrom(1024)
 
@@ -319,6 +324,17 @@ try:
         statistics['protocols'][consumesData['etherType']] += 1
 
         timer = math.floor((time.time() % 2.0))
+        if "192.168." in str(consumesData['d_addr']) and "192.168." in str(consumesData['s_addr']):
+            ipSource = consumesData['s_addr']
+            if(ipSource in ipNames):
+                ipSource = ipNames[consumesData['s_addr']]
+            ipDestination = consumesData['d_addr']
+            if(ipDestination in ipNames):
+                ipDestination = ipNames[consumesData['d_addr']]
+            internalKey = ipSource+ ' to ' + ipDestination
+            if internalKey not in internal_conections:
+                internal_conections[internalKey] = 0
+            internal_conections[internalKey] += 1
         if "192.168." in str(consumesData['d_addr']):
             d_addr = str(consumesData['d_addr'])
             size = consumesData['len']
@@ -330,13 +346,14 @@ try:
         if timer == 0 and available == True:
             consum_msg = []
             average_msg = ["Promedio:"]
+            internal_conections_msg = ["Conexiones Internas:"]
             for ip,size in sorted(consumes.items(), key=itemgetter(1), reverse=True):
-                kbps_size = round((size/4)/1024)*10
+                kbps_size = round((size/4)/1024)*6
                 ipLabel = ip
                 if(ip in ipNames):
-                        ipLabel = ipNames[ip]
+                    ipLabel = ipNames[ip]
                 if kbps_size != 0:
-                    consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*10).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-7))
+                    consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*6).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-7))
                     if ip not in average_count:
                         average_count[ip] = 0
                     if ip not in average_consumes:
@@ -344,6 +361,8 @@ try:
                     if kbps_size > 0:
                         average_count[ip] += 1
                         average_consumes[ip] = Average(average_consumes[ip], kbps_size, average_count[ip])
+                else:
+                    consum_msg.append("".ljust(columns/2-7))
                 consumes[ip] = 0
             for ip, average in sorted(average_consumes.items(), key = itemgetter(1), reverse = True):
                 ipLabel = ip
@@ -351,6 +370,9 @@ try:
                     ipLabel = ipNames[ip]
                 if average > 0:
                     average_msg.append(str(ipLabel + " - " + str(round(average)).strip() + " kb/s").ljust((columns/2)-7))
+            for label, count in sorted(internal_conections.items(), key = itemgetter(1), reverse = True):
+                if count > 0:
+                    internal_conections_msg.append(label + " - " + str(count).ljust(10))
             available = False
             j = 1
             for msg in consum_msg[:maxrows]:
@@ -360,11 +382,15 @@ try:
             for msg in average_msg[:maxrows]:
                 average_panel.addstr(m,2,msg)
                 m+=1
+            k=1
+            for msg in internal_conections_msg[:maxrows]:
+                danger_logs.addstr(k,2,msg)
+                k+=1
 
         if historyEnabled:
             h = 1
             for log in history_lines[-(rows/2-3):]:
-                log_panel.addstr(h,2,log.ljust(columns/2))
+                log_panel.addstr(h,2,log.ljust(columns/2 - 7))
                 h+=1
         else:
             statistics_lines = ["Statistics:"]
@@ -372,11 +398,12 @@ try:
                 statistics_lines.append(protocol + " - uses: " + str(count))
             z = 1
             for msg in statistics_lines[:maxrows]:
-                log_panel.addstr(z,2, msg.ljust(columns/2))
+                log_panel.addstr(z,2, msg.ljust(columns/2 - 7))
                 z += 1
         consums_panel.refresh(0,0,1,2,rows,columns)
         average_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
         log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
+        danger_logs.refresh(0,0,(rows/2),(columns/2) + 2 ,rows+2,columns)
 
 finally:
     curses.nocbreak();stdscr.keypad(0);curses.echo();
