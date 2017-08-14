@@ -325,7 +325,7 @@ try:
 
         timer = math.floor((time.time() % 2.0))
 
-        if "192.168." in str(consumesData['d_addr']) and "192.168." in str(consumesData['s_addr']) and not str(consumesData['s_addr']).endswith(".1")  and not str(consumesData['d_addr']).endswith(".1"):
+        if "192.168." in str(consumesData['d_addr']) and "192.168." in str(consumesData['s_addr']) and not str(consumesData['s_addr']).endswith(".1")  and not str(consumesData['d_addr']).endswith(".1") and not str(consumesData['d_addr']).endswith(".255") and not str(consumesData['s_addr']).endswith(".255"):
             ipSource = consumesData['s_addr']
             if(ipSource in ipNames):
                 ipSource = ipNames[consumesData['s_addr']]
