@@ -324,7 +324,8 @@ try:
         statistics['protocols'][consumesData['etherType']] += 1
 
         timer = math.floor((time.time() % 2.0))
-        if "192.168." in str(consumesData['d_addr']) and "192.168." in str(consumesData['s_addr']):
+
+        if "192.168." in str(consumesData['d_addr']) and "192.168." in str(consumesData['s_addr']) and not str(consumesData['s_addr']).endwin(".1")  and not str(consumesData['d_addr']).endwin(".1"):
             ipSource = consumesData['s_addr']
             if(ipSource in ipNames):
                 ipSource = ipNames[consumesData['s_addr']]
