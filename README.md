@@ -5,6 +5,8 @@ With this application you can easily see the consumption of the network in real 
 
 ## beta:
 This project is constantly changing in its state of beta
+### Read the wiki:
+[wiki is here!](https://github.com/gravadigital/tzsp-reader/wiki)
 ### Use
 
 ```
