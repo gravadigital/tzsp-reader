@@ -26,46 +26,46 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 def eth_addr (a) :
-  b = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (ord(a[0]) , ord(a[1]) , ord(a[2]), ord(a[3]), ord(a[4]) , ord(a[5]))
+  b = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (a[0] , a[1] , a[2], a[3], a[4] , a[5])
   return b
 
 def getType(typeData):
-	types = {
-		0:"Received tag list",
-		1:"Packet for transmit",
-		2:"Reserved",
-		3:"Configuration",
-		4:"Keepalive",
-		5:"port opener"
-	}
-	return types[typeData]
+    types = {
+        0:"Received tag list",
+        1:"Packet for transmit",
+        2:"Reserved",
+        3:"Configuration",
+        4:"Keepalive",
+        5:"port opener"
+    }
+    return types[typeData]
 
 def getProtocol(typeData):
-	types = {
-		0x01:"Ethernet",
-		0x12:"IEE 802.11",
-		0x77:"Prism Header",
-		0x7F:"WLAN AVS"
-	}
-	return types[typeData]
+    types = {
+        0x01:"Ethernet",
+        0x12:"IEE 802.11",
+        0x77:"Prism Header",
+        0x7F:"WLAN AVS"
+    }
+    return types[typeData]
 
 def getTagType(type):
-	types = {
-		0x00: "TAG_PADDING",
-		0x01: "TAG_END",
-		0x0A: "TAG_RAW_RSSI",
-		0x0B: "TAG_SNR",
-		0x0C: "TAG_DATA_RATE",
-		0x0D: "TAG_TIMESTAMP",
-		0X0F: "TAG_CONTENTION_FREE",
-		0X10: "TAG_DECRYPTED",
-		0X11: "TAG_FCS_ERROR",
-		0X12: "TAG_RX_CHANNEL",
-		0X28: "TAG_PACKET_COUNT",
-		0X29: "TAG_RX_FRAME_LENGTH",
-		0X3C: "TAG_WLAN_RADIO_HDR_SERIAL"
-	}
-	return types[type]
+    types = {
+        0x00: "TAG_PADDING",
+        0x01: "TAG_END",
+        0x0A: "TAG_RAW_RSSI",
+        0x0B: "TAG_SNR",
+        0x0C: "TAG_DATA_RATE",
+        0x0D: "TAG_TIMESTAMP",
+        0X0F: "TAG_CONTENTION_FREE",
+        0X10: "TAG_DECRYPTED",
+        0X11: "TAG_FCS_ERROR",
+        0X12: "TAG_RX_CHANNEL",
+        0X28: "TAG_PACKET_COUNT",
+        0X29: "TAG_RX_FRAME_LENGTH",
+        0X3C: "TAG_WLAN_RADIO_HDR_SERIAL"
+    }
+    return types[type]
 
 def getEtherType(etherInt):
     types = {
@@ -207,63 +207,64 @@ def getEtherType(etherInt):
     else:
         return "UKNOW PROTOCOL: " + str(etherInt)
 def processTag(tag,details=False):
-	currentTag = None
-	i = 0
-	while currentTag not in [0x00, 0x01]:
- 		currentTag = ord(tag[i])
-		tagType = getTagType(ord(tag[0]))
-		tagLength = 0
-		if(tagType not in ["TAG_END","TAG_PADDING"]):
-			tagLength = ord(tag[1])
+    currentTag = None
+    i = 0
+    while currentTag not in [0x00, 0x01]:
+        currentTag = tag[i]
+        #tagType = getTagType(ord(str(tag[0])))
+        tagType = getTagType(tag[0])
+        tagLength = 0
+        if(tagType not in ["TAG_END","TAG_PADDING"]):
+            tagLength = ord(tag[1])
 
-		i = i + 1 + tagLength
-		if details:
-			print "tag type: %r" % tagType
-			print "tag length: %r" % tagLength
-	return i
+        i = i + 1 + tagLength
+        if details:
+            print ("tag type: %r" % tagType)
+            print ("tag length: %r" % tagLength)
+    return i
 
 def processUdpData(data,addr):
-	headers = data[0:4]
-        tags = data[4:]
-        tagType = getType(ord(headers[1]))
+    headers = data[0:4]
+    tags = data[4:]
+    #tagType = getType(ord(headers[1]))
 
-        protocol = ord(headers[2]) * 256 + ord(headers[3])
-        protocolStr = getProtocol(protocol)
+    protocol = ord(str(headers[2])) * 256 + ord(str(headers[3]))
+    #protocolStr = getProtocol(protocol)
 
-        tagsLength = processTag(tags)
-        #print "tags length: %r" % tagsLength
-        eth_header = tags[tagsLength:(14+tagsLength)]
-        eth_data = tags[(14+tagsLength):]
-        etherType = getEtherType(ord(eth_header[12])*256 + ord(eth_header[13]))
-        eth = unpack('!6s6sH' , eth_header)
-        eth_protocol = socket.ntohs(eth[2])
-        mac_details = 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol)
+    tagsLength = processTag(tags)
+    #print "tags length: %r" % tagsLength
+    eth_header = tags[tagsLength:(14+tagsLength)]
+    eth_data = tags[(14+tagsLength):]
+    etherType = getEtherType(eth_header[12]*256 + eth_header[13])
+    eth = unpack('!6s6sH' , eth_header)
+    eth_protocol = socket.ntohs(eth[2])
+    mac_details = 'Destination MAC : ' + eth_addr(eth_header[0:6]) + ' Source MAC : ' + eth_addr(eth_header[6:12]) + ' Protocol : ' + str(eth_protocol)
 
-        packet = tags[15:]
-        hexStr = "".join(tags[21:])
-        iph = unpack('!BBHHHBBH4s4s',packet[:20])
-        version_ihl = iph[0]
-        version = version_ihl >> 4
-        ihl = version_ihl & 0xF
+    packet = tags[15:]
+    #hexStr = "".join(tags[21:])
+    iph = unpack('!BBHHHBBH4s4s',packet[:20])
+    #version_ihl = iph[0]
+    #version = version_ihl >> 4
+    #ihl = version_ihl & 0xF
 
-        iph_length = ihl * 4
+    #iph_length = ihl * 4
 
-        ttl = iph[5]
-        protocol = iph[6]
-        s_addr = socket.inet_ntoa(iph[8]);
-        d_addr = socket.inet_ntoa(iph[9]);
-        connection_detail = ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
-	return {"s_addr":s_addr,"d_addr":d_addr,"etherType":etherType,"len":len(eth_data),"connection_detail":connection_detail,"mac_details":mac_details}
+    ttl = iph[5]
+    protocol = iph[6]
+    s_addr = socket.inet_ntoa(iph[8])
+    d_addr = socket.inet_ntoa(iph[9])
+    connection_detail = ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
+    return {"s_addr":s_addr,"d_addr":d_addr,"etherType":etherType,"len":len(eth_data),"connection_detail":connection_detail,"mac_details":mac_details}
 def readIpFile(fileName='./ipfile.json'):
     if(os.path.isfile(fileName)):
         with open(fileName,'r') as configFile:
             ipNames = json.load(configFile)
         return ipNames
     else:
-        return False
+        return {}
 
 def Average(previusAverage = 0, value = 0, quantity = 1):
-	return (float(previusAverage) * (int(quantity)-1) / int(quantity) ) + float(value) / int(quantity)
+    return (float(previusAverage) * (int(quantity)-1) / int(quantity) ) + float(value) / int(quantity)
 
 try:
     consumes = {}
@@ -286,24 +287,24 @@ try:
 
     rows, columns = stdscr.getmaxyx()
     columns -= 2
-    maxrows = (rows/2-3)
+    maxrows = int(rows/2-3)
 
-    consums_panel = curses.newpad((rows -2)/2, (columns -2)/2)
+    consums_panel = curses.newpad(int((rows -2)/2), int((columns -2)/2))
     consums_panel.border(0)
-    average_panel = curses.newpad((rows -2)/2, (columns -2)/2)
+    average_panel = curses.newpad(int((rows -2)/2), int((columns -2)/2))
     average_panel.border(0)
 
-    log_panel = curses.newpad((rows - 2)/2, (columns - 2)/2)
+    log_panel = curses.newpad(int((rows - 2)/2), int((columns - 2)/2))
     log_panel.border(0)
-    danger_logs = curses.newpad((rows -2)/2, (columns -2)/2)
+    danger_logs = curses.newpad(int((rows -2)/2), int((columns -2)/2))
     danger_logs.border(0)
     log_panel_rows, log_panel_columns = log_panel.getmaxyx()
     log_panel_rows -= 2
     stdscr.refresh()
     consums_panel.refresh(0,0,1,2,rows,columns)
-    average_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
-    log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
-    danger_logs.refresh(0,0,(rows/2),(columns/2) + 2 ,rows+2,columns)
+    average_panel.refresh(0,0,1,int(columns/2) + 2 ,rows,columns)
+    log_panel.refresh(0,0,int(rows/2),2,rows+2,columns)
+    danger_logs.refresh(0,0,int(rows/2),int(columns/2) + 2 ,rows+2,columns)
 
     line = 0
     consum_msg=[]
@@ -354,7 +355,7 @@ try:
                 if(ip in ipNames):
                     ipLabel = ipNames[ip]
                 if kbps_size != 0:
-                    consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*6).strip() + " kb/s - " + str(size/2)).ljust((columns/2)-7))
+                    consum_msg.append(str("IP: " + ipLabel + " - " +  str(round((size/4)/1024)*6).strip() + " kb/s - " + str(size/2)).ljust(int(columns/2)-7))
                     if ip not in average_count:
                         average_count[ip] = 0
                     if ip not in average_consumes:
@@ -363,14 +364,14 @@ try:
                         average_count[ip] += 1
                         average_consumes[ip] = Average(average_consumes[ip], kbps_size, average_count[ip])
                 else:
-                    consum_msg.append("".ljust(columns/2-7))
+                    consum_msg.append("".ljust(int(columns/2-7)))
                 consumes[ip] = 0
             for ip, average in sorted(average_consumes.items(), key = itemgetter(1), reverse = True):
                 ipLabel = ip
                 if(ip in ipNames):
                     ipLabel = ipNames[ip]
                 if average > 0:
-                    average_msg.append(str(ipLabel + " - " + str(round(average)).strip() + " kb/s").ljust((columns/2)-7))
+                    average_msg.append(str(ipLabel + " - " + str(round(average)).strip() + " kb/s").ljust(int(columns/2)-7))
             for label, count in sorted(internal_conections.items(), key = itemgetter(1), reverse = True):
                 if count > 0:
                     internal_conections_msg.append(label + " - " + str(count).ljust(10))
@@ -390,8 +391,8 @@ try:
 
         if historyEnabled:
             h = 1
-            for log in history_lines[-(rows/2-3):]:
-                log_panel.addstr(h,2,log.ljust(columns/2 - 7))
+            for log in history_lines[-int(rows/2-3):]:
+                log_panel.addstr(h,2,log.ljust(int(columns/2 - 7)))
                 h+=1
         else:
             statistics_lines = ["Statistics:"]
@@ -399,14 +400,15 @@ try:
                 statistics_lines.append(protocol + " - uses: " + str(count))
             z = 1
             for msg in statistics_lines[:maxrows]:
-                log_panel.addstr(z,2, msg.ljust(columns/2 - 7))
+                log_panel.addstr(z,2, msg.ljust(int(columns/2 - 7)))
                 z += 1
         consums_panel.refresh(0,0,1,2,rows,columns)
-        average_panel.refresh(0,0,1,(columns/2) + 2 ,rows,columns)
-        log_panel.refresh(0,0,(rows/2),2,rows+2,columns)
-        danger_logs.refresh(0,0,(rows/2),(columns/2) + 2 ,rows+2,columns)
-
+        average_panel.refresh(0,0,1,int(columns/2) + 2 ,rows,columns)
+        log_panel.refresh(0,0,int(rows/2),2,rows+2,columns)
+        danger_logs.refresh(0,0,int(rows/2),int(columns/2) + 2 ,rows+2,columns)
+except:
+    print("Unexpected error:", sys.exc_info()[0])
 finally:
-    curses.nocbreak();stdscr.keypad(0);curses.echo();
+    curses.nocbreak();stdscr.keypad(0);curses.echo()
     curses.endwin()
     print("Bye :D")
